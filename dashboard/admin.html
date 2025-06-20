@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Dashboard - PacMac</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      background: #111;
+      color: #0f0;
+      font-family: monospace;
+      padding: 2em;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 2em;
+    }
+    th, td {
+      border: 1px solid #0f0;
+      padding: 0.5em;
+      text-align: left;
+    }
+    button {
+      background: #000;
+      color: #0f0;
+      border: 1px solid #0f0;
+      padding: 0.4em 1em;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0f0;
+      color: #000;
+    }
+  </style>
+</head>
+<body>
+  <h1>Admin Dashboard - Subdomain Viewer</h1>
+  <button onclick="loadUsers()">🔄 Refresh</button>
+  <table id="userTable">
+    <thead>
+      <tr>
+        <th>Email</th>
+        <th>Subdomain</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const supabase = supabase.createClient('https://YOUR_PROJECT.supabase.co', 'YOUR_ADMIN_SERVICE_ROLE_KEY');
+
+    async function loadUsers() {
+      const { data, error } = await supabase.from('about_pages').select('*');
+      const tbody = document.querySelector('#userTable tbody');
+      tbody.innerHTML = '';
+      data.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${row.email}</td>
+          <td>${row.slug}.pacmacmobile.com</td>
+          <td><button onclick="deleteUser('${row.slug}')">❌ Delete</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function deleteUser(slug) {
+      if (!confirm(`Delete ${slug}?`)) return;
+      await supabase.from('about_pages').delete().eq('slug', slug);
+      loadUsers();
+    }
+
+    loadUsers();
+  </script>
+</body>
+</html>
