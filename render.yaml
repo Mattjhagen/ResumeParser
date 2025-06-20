@@ -1,3 +1,5 @@
+buildCommand: npm install
+startCommand: npm start
 services:
   - type: web
     name: pacmacmobile-resume
