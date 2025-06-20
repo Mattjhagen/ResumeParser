@@ -1,1 +1,109 @@
-// Style Sheet 
+/* Terminal-Kali theme */
+body {
+  margin: 0;
+  padding: 2em;
+  font-family: monospace, 'Courier New', monospace;
+  background: #0b0c10;
+  color: #00ff99;
+}
+
+header {
+  text-align: center;
+  padding-bottom: 1em;
+  border-bottom: 2px solid #00ff99;
+}
+
+.typewriter {
+  font-size: 2em;
+  overflow: hidden;
+  white-space: nowrap;
+  border-right: 3px solid #00ff99;
+  width: 20ch;
+  animation: typing 3s steps(20), blink 0.75s step-end infinite;
+  margin: 0 auto;
+}
+
+@keyframes typing {
+  from { width: 0 }
+  to { width: 20ch }
+}
+@keyframes blink {
+  50% { border-color: transparent }
+}
+
+nav {
+  text-align: center;
+  padding: 1em 0;
+  background: #111;
+}
+nav a {
+  color: #00ff99;
+  text-decoration: none;
+  margin: 0 10px;
+}
+nav a:hover {
+  text-decoration: underline;
+}
+
+section {
+  margin: 2em auto;
+  max-width: 800px;
+  padding: 1em;
+  border: 1px solid #00ff99;
+  border-radius: 10px;
+  background: rgba(0, 255, 153, 0.05);
+}
+
+input, button, textarea {
+  background: #000;
+  color: #00ff99;
+  border: 1px solid #00ff99;
+  padding: 0.5em;
+  width: 100%;
+  margin: 0.5em 0;
+  font-family: monospace;
+}
+button:hover {
+  background: #00ff99;
+  color: #000;
+}
+
+ul {
+  list-style: square;
+  padding-left: 1.5em;
+}
+
+.plan {
+  border: 2px dashed;
+  margin-bottom: 1em;
+  padding: 1em;
+  border-radius: 6px;
+}
+
+pre {
+  background: #111;
+  padding: 1em;
+  overflow-x: auto;
+  border: 1px solid #00ff99;
+  font-size: 0.9em;
+}
+
+#terminalWrapper {
+  background: #000;
+  color: #00ff99;
+  font-family: monospace;
+  padding: 1em;
+  margin: 2em auto;
+  max-width: 800px;
+}
+
+#cursor {
+  display: inline-block;
+  width: 10px;
+  background: #00ff99;
+  animation: blink 1s steps(2, start) infinite;
+}
+
+#chat-widget {
+  margin-top: 2em;
+}
