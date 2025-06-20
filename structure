@@ -1,0 +1,20 @@
+pacmacmobile-resume-site/
+├── public/
+│   ├── index.html                 # Main UI (Kali style)
+│   ├── style.css                 # Terminal CSS
+│   ├── linkedin-callback.html   # LinkedIn auto-generate page
+│   └── assets/                   # Images, icons, logos
+├── dashboard/
+│   └── admin.html                # Admin control panel
+├── server.js                     # Backend logic
+├── cloudflare.js                 # Subdomain DNS
+├── dynadot.js                    # Domain register or affiliate
+├── validators.js                 # Joi validators
+├── .env.example                  # Config template
+├── README.md                     # Instructions
+├── render.yaml                   # Render deploy config
+├── wrangler.toml                 # Cloudflare Pages config
+└── .github/
+    └── workflows/
+        ├── render.yml            # Render deploy on push
+        └── cloudflare-pages.yml  # CF Pages deploy
