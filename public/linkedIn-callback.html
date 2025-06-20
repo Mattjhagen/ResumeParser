@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head><title>Generating...</title></head>
+<body>
+<h2>⏳ Setting up your About Me page...</h2>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const supabase = supabase.createClient('https://YOUR_PROJECT.supabase.co', 'YOUR_ANON_KEY');
+
+  supabase.auth.getSession().then(async ({ data }) => {
+    const token = data?.session?.access_token;
+    if (!token) return;
+
+    const res = await fetch('/generate-from-linkedin', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    const result = await res.json();
+    window.location.href = result.previewUrl;
+  });
+</script>
+</body>
+</html>
