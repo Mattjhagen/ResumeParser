@@ -17,6 +17,3 @@ ROOT_DOMAIN = "pacmacmobile.com"
 DYNADOT_API_KEY = "your_dynadot_key"
 STRIPE_SECRET_KEY = "sk_test_..."
 PUBLIC_URL = "https://pacmacmobile.pages.dev"
-
-[site]
-bucket = "./public"
