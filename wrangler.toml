@@ -3,6 +3,8 @@ account_id = "b36aaecab5f5f0c07ef80a83a1e6c561"
 compatibility_date = "2024-05-01"
 workers_dev = true
 
+main = "server.js"
+
 [build]
 command = "npm install && npm run build"
 cwd = "public"
