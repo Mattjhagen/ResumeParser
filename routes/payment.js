@@ -1,12 +1,12 @@
-const express = require("express");
-const router = express.Router();
-const Stripe = require("stripe");
+// /routes/payment.js
+import express from "express";
+import Stripe from "stripe";
 
+const router = express.Router();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2023-08-16",
 });
 
-// POST /create-checkout-session
 router.post("/create-checkout-session", async (req, res) => {
   const { user } = req.body;
 
@@ -47,4 +47,4 @@ router.post("/create-checkout-session", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
