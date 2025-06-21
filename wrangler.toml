@@ -1,8 +1,7 @@
 name = "pacmacmobile-cloudflare"
-type = "javascript"
 account_id = "b36aaecab5f5f0c07ef80a83a1e6c561"
-workers_dev = true
 compatibility_date = "2024-05-01"
+workers_dev = true
 
 [build]
 command = "npm install && npm run build"
@@ -12,9 +11,13 @@ cwd = "public"
 SUPABASE_URL = "https://your-project.supabase.co"
 SUPABASE_ANON_KEY = "your_anon_key"
 OPENAI_API_KEY = "your_openai_key"
-CLOUDFLARE_API_TOKEN = "your_cloudflare_token"
+CLOUDFLARE_API_TOKEN = "your_token"
 CLOUDFLARE_ZONE_ID = "your_zone_id"
 ROOT_DOMAIN = "pacmacmobile.com"
 DYNADOT_API_KEY = "your_dynadot_key"
 STRIPE_SECRET_KEY = "sk_test_..."
 PUBLIC_URL = "https://pacmacmobile.pages.dev"
+
+# ⬇️ ADD THIS
+[site]
+bucket = "./public"
