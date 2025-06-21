@@ -1,3 +1,7 @@
+"dependencies": {
+  "node-fetch": "^2.6.7"
+}
+
 {
   "name": "pacmacmobile-resume-site",
   "version": "1.0.0",
