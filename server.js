@@ -22,7 +22,22 @@ app.post("/upload-resume", upload.single("resume"), async (req, res) => {
       ? `${resumeText}\n\nLinkedIn Token: ${accessToken}`
       : resumeText;
 
-    const prompt = `Use the resume content below to generate a clean, responsive 'About Me' personal website in HTML format. Use a hacker-style, terminal-themed color scheme and make it suitable for freelancers and digital nomads.\n\nResume:\n${enrichedText}`;
+const prompt = `
+Analyze the following resume and determine:
+1. Their professional background
+2. Key personality traits (e.g. driven, adventurous, methodical)
+3. Ideal tone (e.g. professional, minimalist, playful, edgy)
+4. Thematic design (e.g. dark terminal, tech-futuristic, minimal Zen, travel blog style)
+
+Then, based on this analysis, generate a fully responsive, mobile-friendly HTML5 'About Me' personal website. Use custom fonts, layout, and colors that reflect their personality.
+
+Embed their story and strengths into the content in a way that feels like them speaking to a visitor.
+
+Respond with a complete, ready-to-host HTML file.
+
+Resume:
+${enrichedText}
+`;
 
     const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
