@@ -1,6 +1,6 @@
 name = "pacmacmobile-cloudflare"
 type = "javascript"
-account_id = "your-cloudflare-account-id"
+account_id = "b36aaecab5f5f0c07ef80a83a1e6c561"
 workers_dev = true
 compatibility_date = "2024-05-01"
 
