@@ -1,60 +1,50 @@
 const express = require("express");
-const fetch = require("node-fetch");
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const router = express.Router();
+const Stripe = require("stripe");
 
-router.post("/checkout", async (req, res) => {
-  const { domain, userId } = req.body;
-
-  const session = await stripe.checkout.sessions.create({
-    payment_method_types: ["card"],
-    line_items: [{
-      price_data: {
-        currency: "usd",
-        product_data: { name: `Custom Domain: ${domain}` },
-        unit_amount: 1500,
-      },
-      quantity: 1,
-    }],
-    mode: "payment",
-    success_url: `https://pacmacmobile.com/success?domain=${domain}&user=${userId}`,
-    cancel_url: `https://pacmacmobile.com/cancel`,
-    metadata: { domain, userId }
-  });
-
-  res.json({ url: session.url });
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: "2023-08-16",
 });
 
-router.post("/stripe/webhook", express.raw({ type: 'application/json' }), async (req, res) => {
-  const payload = req.body;
-  const sig = req.headers['stripe-signature'];
+// POST /create-checkout-session
+router.post("/create-checkout-session", async (req, res) => {
+  const { user } = req.body;
 
-  let event;
+  if (!user?.id || !user?.email || !user?.name) {
+    return res.status(400).json({ error: "Missing user info" });
+  }
+
   try {
-    event = stripe.webhooks.constructEvent(payload, sig, process.env.STRIPE_WEBHOOK_SECRET);
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      mode: "payment",
+      line_items: [
+        {
+          price_data: {
+            currency: "usd",
+            product_data: {
+              name: "PacMac Pro Site",
+              description: "Custom domain + premium features",
+            },
+            unit_amount: 1500,
+          },
+          quantity: 1,
+        },
+      ],
+      success_url: `${process.env.PUBLIC_URL}/success.html`,
+      cancel_url: `${process.env.PUBLIC_URL}/cancel.html`,
+      customer_email: user.email,
+      metadata: {
+        user_id: user.id,
+        username: user.name,
+      },
+    });
+
+    res.json({ url: session.url });
   } catch (err) {
-    return res.status(400).send(`Webhook Error: ${err.message}`);
+    console.error("Stripe error", err);
+    res.status(500).json({ error: "Failed to create session" });
   }
-
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object;
-    const { domain } = session.metadata;
-
-    try {
-      const dynadot = await fetch(`https://api.dynadot.com/api3.json?key=${process.env.DYNADOT_API_KEY}&command=register_domain&domain=${domain}&duration=1`, {
-        method: "GET",
-      });
-
-      const result = await dynadot.json();
-      if (result.Response.Status !== "success") throw new Error(result.Response.Status);
-
-      console.log(`✅ Domain ${domain} registered`);
-    } catch (err) {
-      console.error("Dynadot registration failed:", err);
-    }
-  }
-
-  res.sendStatus(200);
 });
 
 module.exports = router;
