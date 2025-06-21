@@ -132,4 +132,25 @@ pre {
 @keyframes flicker {
   0% { opacity: 0.9; }
   100% { opacity: 1; }
+
+  .plan-card {
+  background: #111;
+  color: #0f0;
+  padding: 1rem;
+  border: 1px solid #333;
+  border-radius: 8px;
+  width: 240px;
+}
+.plan-card.premium {
+  border-color: gold;
+  color: gold;
+}
+.plan-card button {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background: #00ff80;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+}
 }
