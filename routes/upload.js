@@ -1,9 +1,12 @@
 import express from "express";
 import multer from "multer";
-import pdfParse from "pdf-parse";
 import fs from "fs/promises";
 import OpenAI from "openai";
+import pdfParse from "pdf-parse"; // or: const pdfParse = require("pdf-parse");
 
+async function extractTextFromPDF(buffer) {
+  return await pdfParse(buffer);
+}
 const router = express.Router();
 const upload = multer({ dest: "uploads/" });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
