@@ -5,6 +5,7 @@ import fs from "fs/promises";
 import OpenAI from "openai";
 import pdfParse from "pdf-parse";
 import path from "path";
+import { extractTextFromPDF } from "../lib/pdf.js";
 
 const router = express.Router();
 const upload = multer({ dest: "uploads/" });
