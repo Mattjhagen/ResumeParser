@@ -1,28 +1,25 @@
-// server.js
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-import paymentRoutes from "./routes/payment.js";
+import path from "path";
+import { fileURLToPath } from "url";
+
 import authRoutes from "./routes/auth.js";
 import uploadRoutes from "./routes/upload.js";
+import paymentRoutes from "./routes/payment.js";
 
 dotenv.config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-// Static public files
-app.use(express.static("public"));
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+app.use(express.static(path.join(__dirname, "public")));
 
-// Routes
-app.use("/auth", authRoutes);
-app.use("/upload-resume", uploadRoutes);
-app.use("/payment", paymentRoutes);
+app.use(authRoutes);
+app.use(uploadRoutes);
+app.use(paymentRoutes);
 
-// Server start
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`✅ Server running on http://localhost:${PORT}`);
-});
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
