@@ -4,6 +4,11 @@ const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
 const fetch = require("node-fetch");
+const deployRoutes = require("./routes/deploy");
+const paymentRoutes = require("./routes/payment");
+
+app.use("/deploy", deployRoutes);
+app.use("/payment", paymentRoutes);
 require("dotenv").config();
 
 const app = express();
