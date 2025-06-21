@@ -3,7 +3,6 @@ import express from "express";
 import multer from "multer";
 import fs from "fs/promises";
 import OpenAI from "openai";
-import pdfParse from "pdf-parse";
 import path from "path";
 import { extractTextFromPDF } from "../lib/pdf.js";
 
