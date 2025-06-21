@@ -1,5 +1,5 @@
 // server.js
-const express = require("express");
+import express from "express";
 const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
@@ -7,7 +7,8 @@ const fetch = require("node-fetch");
 const deployRoutes = require("./routes/deploy");
 const paymentRoutes = require("./routes/payment");
 const webhookRoute = require("./routes/webhook");
-const paymentRoutes = require("./routes/payment");
+import paymentRoutes from "./routes/payment.js";
+import dotenv from "dotenv";
 app.use("/payment", paymentRoutes);
 
 app.use("/", webhookRoute);
