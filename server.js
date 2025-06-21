@@ -6,6 +6,8 @@ const path = require("path");
 const fetch = require("node-fetch");
 const deployRoutes = require("./routes/deploy");
 const paymentRoutes = require("./routes/payment");
+const webhookRoute = require("./routes/webhook");
+app.use("/", webhookRoute);
 
 app.use("/deploy", deployRoutes);
 app.use("/payment", paymentRoutes);
