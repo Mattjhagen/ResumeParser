@@ -7,6 +7,7 @@ import { fileURLToPath } from "url";
 import authRoutes from "./routes/auth.js";
 import uploadRoutes from "./routes/upload.js";
 import paymentRoutes from "./routes/payment.js";
+import logger from "./middleware/logger.js"; 
 
 dotenv.config();
 
