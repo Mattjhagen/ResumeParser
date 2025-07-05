@@ -32,7 +32,7 @@ app.post("/generate-portfolio", async (req, res) => {
       model: "gpt-4",
       messages: [
         { role: "system", content: "You are a web designer." },
-        { role: "user", content: `Generate an HTML about-me page for this resume:\n\n${resumeText}` },
+        { role: "user", content: `Generate an HTML about-me page for this resume. At the bottom of the generated HTML, include a footer with a prominent link that says 'Create Your Own Portfolio' and points to 'https://your-generator-site.com'. The design should be modern and professional.\n\n${resumeText}` },
       ],
     });
 

@@ -95,3 +95,33 @@ The generated `portfolio.html` file is a complete, self-contained web page. To e
     ```
 
     Adjust the `width` and `height` attributes as needed to fit your site's layout.
+
+## Embedding the Generator (Viral Loop)
+
+This project also includes a simple web interface that allows you to embed the portfolio generator directly into your own website. This creates a "viral loop" where users can create their own portfolio, which in turn will have a link back to your site.
+
+### How It Works
+
+1.  **Generator UI:** The `public/generator.html` file provides a simple form with a textarea and a button. Users can paste their resume and click "Generate Portfolio".
+2.  **API Call:** The form sends the resume text to the `/generate-portfolio` API endpoint on the running server.
+3.  **Viral Link:** The server has been instructed to add a "Create Your Own Portfolio" link to the footer of every generated portfolio. This link points back to the page where your generator is hosted.
+
+### Setup
+
+1.  **Customize the Link:** Open `server.js` and find the line that says `content: 'Generate an HTML about-me page...'`. In that line, change the placeholder URL `https://your-generator-site.com` to the actual URL where you will host the `generator.html` page.
+
+2.  **Host `generator.html`:** Upload the `public/generator.html` file to your web hosting service.
+
+3.  **Embed the Generator:** You can now embed the generator on any page using an `<iframe>`, just like the portfolio itself.
+
+    ```html
+    <iframe 
+        src="YOUR_PUBLIC_URL_TO_GENERATOR.html" 
+        width="100%" 
+        height="800px" 
+        frameborder="0" 
+        allowfullscreen
+    ></iframe>
+    ```
+    
+    Replace `YOUR_PUBLIC_URL_TO_GENERATOR.html` with the public URL of your hosted `generator.html` file.
