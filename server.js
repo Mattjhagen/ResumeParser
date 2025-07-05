@@ -8,6 +8,7 @@ import authRoutes from "./routes/auth.js";
 import uploadRoutes from "./routes/upload.js";
 import paymentRoutes from "./routes/payment.js";
 import logger from "./middleware/logger.js"; 
+import OpenAI from "openai";
 
 dotenv.config();
 
@@ -21,6 +22,28 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use(authRoutes);
 app.use(uploadRoutes);
 app.use(paymentRoutes);
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+app.post("/generate-portfolio", async (req, res) => {
+  try {
+    const { resumeText } = req.body;
+    const gptRes = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [
+        { role: "system", content: "You are a web designer." },
+        { role: "user", content: `Generate an HTML about-me page for this resume:\n\n${resumeText}` },
+      ],
+    });
+
+    const html = gptRes.choices[0].message.content;
+    res.json({ html });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Resume processing failed" });
+  }
+});
+
 {
   "level": "info",
   "event": "logtail_test",

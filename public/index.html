@@ -1,92 +1,31 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>PacMac Resume Generator</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <title>Resume Portfolio Generator</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+  <script src="plugin.js"></script>
 </head>
 <body>
-  <header>
-    <h1 class="typewriter">PacMac Mobile Terminal</h1>
-    <p>Resume to Website • Built for Hackers & Nomads</p>
-  </header>
-
-  <section class="cta">
-    <h2>🔐 Sign In With LinkedIn</h2>
-    <button id="linkedin-login" class="cta">LinkedIn Login</button>
-  </section>
-
-  <section class="cta">
-    <h2>📄 Upload Resume</h2>
-    <form id="resumeForm" enctype="multipart/form-data">
-      <input type="file" name="resumeFile" accept=".pdf,.txt" required />
-      <input type="hidden" id="accessToken" name="accessToken" />
-      <button type="submit" class="cta">Generate My Page</button>
-    </form>
-    <div id="status"></div>
-  </section>
-
-  <section id="domain-registration" style="display:none;">
-    <h2>🌍 Get Your Custom Domain</h2>
-    <form onsubmit="register(event)">
-      <input type="text" id="domainInput" placeholder="yourname.com" />
-      <button type="submit" class="cta">Claim Free Domain</button>
-    </form>
-    <pre id="domainResponse"></pre>
-  </section>
+  <h1>Upload your resume to generate a portfolio</h1>
+  <input type="file" id="resume-file" accept=".pdf">
+  <button onclick="handleUpload()">Generate Portfolio</button>
 
   <script>
-    const supabase = supabase.createClient('https://YOUR_PROJECT.supabase.co', 'YOUR_ANON_KEY');
+    async function handleUpload() {
+      const fileInput = document.getElementById('resume-file');
+      const file = fileInput.files[0];
+      if (!file) {
+        alert('Please select a file');
+        return;
+      }
 
-    document.getElementById('loginBtn')?.addEventListener('click', () => {
-      supabase.auth.signInWithOAuth({ provider: 'linkedin' });
-    });
-
-    supabase.auth.getSession().then(({ data }) => {
-      const token = data?.session?.access_token;
-      if (token) document.getElementById('accessToken').value = token;
-    });
-
-    document.getElementById('uploadForm')?.addEventListener('submit', async e => {
-      e.preventDefault();
-      const formData = new FormData(e.target);
-      const token = formData.get('accessToken');
-      formData.delete('accessToken');
-
-      const res = await fetch('/upload-resume', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData
-      });
-
-      const result = await res.json();
-      document.getElementById('uploadResult').innerHTML = res.ok
-        ? `<a href="${result.previewUrl}" target="_blank">🌐 View Your Site</a>`
-        : `<pre>${JSON.stringify(result)}</pre>`;
-      document.getElementById('domain-registration').style.display = 'block';
-    });
-
-    async function register(e) {
-      e.preventDefault();
-      const domain = document.getElementById('domainInput').value;
-      const res = await fetch('/register-domain', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ domain })
-      });
-      const data = await res.json();
-      document.getElementById('domainResponse').textContent = JSON.stringify(data, null, 2);
+      try {
+        await generatePortfolio(file);
+      } catch (error) {
+        console.error(error);
+        alert('Failed to generate portfolio');
+      }
     }
   </script>
-  <script src="/script.js" defer></script>
-  <div id="terminal-loader" style="display:none;">
-  <pre class="terminal-style">
-  ████████████████████████████████████
-  ⏳ Setting up your resume website...
-  ████████████████████████████████████
-  </pre>
-</div>
-<script src="/script.js" defer></script>
 </body>
 </html>
