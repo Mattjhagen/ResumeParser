@@ -1,80 +1,88 @@
-# Resume Portfolio Generator
+# Resume Portfolio Generator API
 
-This project provides a standalone Node.js script to parse a resume (plain text) and generate a personalized, embeddable HTML portfolio page using AI.
+This project is a Node.js web server that uses AI to generate a personalized HTML portfolio page from resume text.
 
 ## Features
 
-- Extracts key information (name, title, experience, skills, education, contact) from a resume.
-- Infers industry, primary role, and personality from the resume text using the Gemini API.
-- Generates a visually appealing HTML portfolio page with dynamic styling based on inferred personality/industry.
-- Designed for easy embedding into other websites using an `<iframe>`.
+- Provides an API endpoint to convert resume text into a full HTML portfolio page.
+- Uses OpenAI's GPT-4 for content generation.
+- Includes routes for user authentication (via Supabase), file uploads, and payments (via Stripe), though these are not required for the core portfolio generation.
 
 ## Setup and Usage
 
 ### Prerequisites
 
 - Node.js (v18 or higher recommended)
-- A Gemini API Key (from Google AI Studio)
+- An OpenAI API Key
+- A Supabase project for URL and Key (optional, for auth features)
 
 ### Installation
 
 1.  **Clone this repository:**
     ```bash
-    git clone https://github.com/vibeCodesSpace/resume-parser.git
-    cd resume-parser
+    git clone https://github.com/Mattjhagen/ResumeParser.git
+    cd ResumeParser
     ```
 
-2.  **Navigate to the project directory:**
-    ```bash
-    cd resume-portfolio-generator
-    ```
-
-3.  **Install dependencies:**
+2.  **Install dependencies:**
     ```bash
     npm install
     ```
 
 ### Configuration
 
-Set your Gemini API Key as an environment variable. Replace `YOUR_GEMINI_API_KEY_HERE` with your actual key.
+1.  Create a `.env` file in the root of the project.
+2.  Add your environment variables to the `.env` file. At a minimum, you need an OpenAI API key.
+
+    ```env
+    # Required for generating the portfolio
+    OPENAI_API_KEY="sk-..."
+
+    # Optional: Required for authentication features
+    SUPABASE_URL="https://your-project-ref.supabase.co"
+    SUPABASE_KEY="your-supabase-anon-key"
+    ```
+
+### Running the Server
+
+Start the server with the following command:
 
 ```bash
-export GEMINI_API_KEY="YOUR_GEMINI_API_KEY_HERE"
+node server.js
 ```
 
-Alternatively, you can directly embed the API key in `generate-portfolio.js` (less secure for public repositories):
+The server will start on port 3000.
 
-```javascript
-const genAI = new GoogleGenerativeAI("YOUR_GEMINI_API_KEY_HERE");
-```
+## Testing the Generator
 
-### Running the Generator
+You can test the portfolio generation endpoint using a tool like `curl`.
 
-To generate a portfolio, run the `generate-portfolio.js` script with the path to your plain text resume file:
+1.  Make sure the server is running.
+2.  Open a new terminal and run the following command. This will send a sample resume to the API, and save the generated HTML into a file named `portfolio.html`.
 
-```bash
-node generate-portfolio.js <path-to-your-resume-file.txt>
-```
+    ```bash
+    curl -X POST http://localhost:3000/generate-portfolio \
+    -H "Content-Type: application/json" \
+    -d '{
+      "resumeText": "John Doe\nSoftware Engineer\n\nExperience:\n- Software Engineer at Google (2020-Present)\n- Software Engineer Intern at Facebook (2019)\n\nEducation:\n- B.S. in Computer Science from Stanford University (2020)\n\nSkills:\n- JavaScript, Python, Java, C++"
+    }' \
+    -o portfolio.html
+    ```
 
-**Example:**
-
-```bash
-node generate-portfolio.js ~/downloads/Matthew\ Hagen.txt
-```
-
-The script will output an HTML file (e.g., `your-name-portfolio.html`) in the same directory.
+3.  You will now have a `portfolio.html` file in your current directory. You can open this file in a web browser to see the result.
 
 ## Embedding the Portfolio
 
-Once you have generated your portfolio HTML file, you can embed it into any other website using an `<iframe>`.
+The generated `portfolio.html` file is a complete, self-contained web page. To embed it into another website, you first need to host it online.
 
-1.  **Host the Generated HTML File:**
-    The generated HTML file (e.g., `matthew-hagen-portfolio.html`) needs to be accessible via a web server. You can:
-    *   Upload it to a web hosting service.
-    *   Use a service like GitHub Pages for your repository. If you enable GitHub Pages for this repository, the HTML file will be accessible at a URL like `https://vibeCodesSpace.github.io/resume-parser/matthew-hagen-portfolio.html` (assuming it's in the root of your `gh-pages` branch or `docs` folder).
+1.  **Host the HTML File:**
+    Upload the `portfolio.html` file to a web hosting service. Some free options include:
+    *   [GitHub Pages](https://pages.github.com/)
+    *   [Netlify Drop](https://app.netlify.com/drop)
+    *   [Vercel](https://vercel.com/)
 
 2.  **Embed using an `<iframe>`:**
-    In your target website's HTML, add the following `<iframe>` tag. Replace `YOUR_PUBLIC_URL_TO_PORTFOLIO.html` with the actual public URL where your portfolio HTML file is hosted.
+    Once your file is hosted and you have a public URL, you can embed it in any other website using an `<iframe>`. Add the following HTML to your target site, replacing `YOUR_PUBLIC_URL_TO_PORTFOLIO.html` with the actual URL.
 
     ```html
     <iframe 
@@ -86,8 +94,4 @@ Once you have generated your portfolio HTML file, you can embed it into any othe
     ></iframe>
     ```
 
-    Adjust `width` and `height` as needed to fit your embedding site's layout.
-
-## Contributing
-
-Feel free to fork this repository, open issues, and submit pull requests.
+    Adjust the `width` and `height` attributes as needed to fit your site's layout.
