@@ -1,5 +1,9 @@
 // This file is purely for client-side logic and UI interaction.
 
+// We need to include a client-side PDF parsing library.
+// Let's use pdf.js from Mozilla. We'll add the script tag to index.html
+// For now, we'll assume it's loaded.
+
 // Function to make the API call to our own backend
 async function callBackendForPortfolio(resumeText) {
   const response = await fetch('/api/generate-portfolio', {
@@ -33,14 +37,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const file = resumeFile.files[0];
-    const reader = new FileReader();
-
+    
     loadingMessage.style.display = 'block';
     portfolioOutput.innerHTML = '';
 
-    reader.onload = async (e) => {
-      const resumeText = e.target.result;
-      try {
+    try {
+        let resumeText = '';
+        if (file.type === 'application/pdf') {
+            const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file)).promise;
+            let textContent = '';
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const text = await page.getTextContent();
+                textContent += text.items.map(s => s.str).join(' ');
+            }
+            resumeText = textContent;
+        } else {
+            resumeText = await file.text();
+        }
+
         const generatedHtml = await callBackendForPortfolio(resumeText);
         portfolioOutput.innerHTML = `
           <h3>Your Generated Portfolio:</h3>
@@ -48,20 +63,11 @@ document.addEventListener('DOMContentLoaded', () => {
           <p>You can save this HTML content and host it on your own domain or use a service like GitHub Pages.</p>
           <textarea style="width: 100%; height: 200px; margin-top: 10px;">${generatedHtml}</textarea>
         `;
-      } catch (error) {
+    } catch (error) {
         console.error('Error generating portfolio:', error);
         portfolioOutput.innerHTML = `<p style="color: red;">Error generating portfolio: ${error.message}</p>`;
-      } finally {
+    } finally {
         loadingMessage.style.display = 'none';
-      }
-    };
-
-    if (file.type === 'application/pdf') {
-      alert('PDF parsing is not supported in this client-side version. Please upload a plain text resume.');
-      loadingMessage.style.display = 'none';
-      return;
-    } else {
-      reader.readAsText(file);
     }
   });
 });

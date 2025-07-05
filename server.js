@@ -1,14 +1,50 @@
 import express from 'express';
 import path from 'path';
+import fs from 'fs/promises';
 import { fileURLToPath } from 'url';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import OpenAI from 'openai';
+import fetch from 'node-fetch';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = process.env.PORT || 3000;
+const sitesDir = path.join(__dirname, 'sites');
+
+// Ensure the 'sites' directory exists
+fs.mkdir(sitesDir, { recursive: true });
+
+// --- Cloudflare API Helper ---
+const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
+const CLOUDFLARE_ZONE_ID = process.env.CLOUDFLARE_ZONE_ID;
+const ROOT_DOMAIN = process.env.ROOT_DOMAIN || 'yourdomain.com'; // Fallback
+const RENDER_SERVICE_URL = process.env.RENDER_EXTERNAL_URL; // e.g., your-app.onrender.com
+
+async function createDnsRecord(subdomain) {
+  const url = `https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records`;
+  const headers = {
+    'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
+    'Content-Type': 'application/json',
+  };
+  const body = JSON.stringify({
+    type: 'CNAME',
+    name: subdomain,
+    content: RENDER_SERVICE_URL,
+    proxied: true, // Use Cloudflare's proxy
+    ttl: 1, // 1 = Automatic
+  });
+
+  const response = await fetch(url, { method: 'POST', headers, body });
+  const data = await response.json();
+
+  if (!data.success) {
+    console.error('Cloudflare API Error:', data.errors);
+    throw new Error(`Failed to create DNS record: ${data.errors[0].message}`);
+  }
+  return data.result;
+}
 
 // Define API providers and their initialization logic
 const apiProviders = [
@@ -47,23 +83,7 @@ const apiProviders = [
 ];
 
 async function extractResumeData(resumeText) {
-  const basePrompt = `You are a highly accurate data extraction AI. Your sole purpose is to extract structured data from the provided resume text. Analyze the content to infer the candidate's industry, primary role, and personality based on the language used. You MUST return ONLY a JSON object with the exact structure below. Do NOT include any conversational text, markdown outside the JSON, or any other characters.
-
-{
-  "name": "Full Name",
-  "title": "Professional Title/Role",
-  "summary": "Professional summary",
-  "experience": [{"company": "", "role": "", "duration": "", "description": ""}],
-  "skills": ["skill1", "skill2"],
-  "education": [{"institution": "", "degree": "", "year": ""}],
-  "contact": {"email": "", "phone": "", "linkedin": "", "website": ""},
-  "industry": "Inferred industry (e.g., Technology, Healthcare, Finance)",
-  "role": "Inferred primary role (e.g., Software Engineer, Project Manager, Marketing Specialist)",
-  "personality": "Brief analysis of the candidate's personality based on the tone and language of the cover letter or summary (e.g., 'Driven and results-oriented', 'Creative and collaborative')."
-}
-
-Resume Text:
-${resumeText}`;
+    const basePrompt = `You are a highly accurate data extraction AI. Your sole purpose is to extract structured data from the provided resume text. Analyze the content to infer the candidate's industry, primary role, and personality based on the language used. You MUST return ONLY a JSON object with the exact structure below. Do NOT include any conversational text, markdown outside the JSON, or any other characters.\n\n{\n  "name": "Full Name",\n  "title": "Professional Title/Role",\n  "summary": "Professional summary",\n  "experience": [{"company": "", "role": "", "duration": "", "description": ""}],\n  "skills": ["skill1", "skill2"],\n  "education": [{"institution": "", "degree": "", "year": ""}],\n  "contact": {"email": "", "phone": "", "linkedin": "", "website": ""},\n  "industry": "Inferred industry (e.g., Technology, Healthcare, Finance)",\n  "role": "Inferred primary role (e.g., Software Engineer, Project Manager, Marketing Specialist)",\n  "personality": "Brief analysis of the candidate's personality based on the tone and language of the cover letter or summary (e.g., 'Driven and results-oriented', 'Creative and collaborative')."\n}\n\nResume Text:\n${resumeText}`;
 
   for (const providerConfig of apiProviders) {
     if (!providerConfig.apiKey) {
@@ -89,153 +109,114 @@ ${resumeText}`;
 }
 
 async function generatePortfolioHtml(resumeData) {
-  const { name, title, summary, experience, skills, education, contact, industry, role, personality } = resumeData;
+    const prompt = `\n    You are a world-class web developer and designer. Your task is to create a stunning, professional, and highly personalized one-page portfolio website using only HTML and CSS. You will be given a JSON object containing a candidate's resume data, including their inferred industry, role, and personality.\n\n    **Your Goal:**\n    Generate a complete, single HTML file with embedded CSS that is beautiful, functional, and perfectly tailored to the candidate's profile.\n\n    **Design Principles:**\n    1.  **Personality-Driven Design:** The design MUST reflect the candidate's inferred 'personality'.\n        *   If 'Creative', use artistic fonts, vibrant colors, and unique layouts.\n        *   If 'Professional' or 'Corporate', use clean lines, modern sans-serif fonts, and a more traditional but elegant layout.\n        *   If 'Tech-focused', consider a dark mode, monospace fonts, and a sleek, modern aesthetic.\n    2.  **Industry-Specific Aesthetics:** The color palette and overall feel should align with the candidate's 'industry'.\n        *   **Tech:** Blues, dark grays, electric greens.\n        *   **Healthcare:** Greens, blues, clean whites.\n        *   **Finance:** Navy, gold, silver, deep grays.\n        *   **Creative/Marketing:** Bold, vibrant, and unconventional colors.\n    3.  **Hero Section CTA:** The first thing a user sees (the "hero section") MUST be a clear and compelling Call to Action (CTA). It should feature the candidate's name, title, and a primary contact method (email or LinkedIn).\n    4.  **Responsive Design:** The CSS must include media queries to ensure the site looks great on both desktop and mobile devices.\n    5.  **Structure and Content:**\n        *   Use the provided JSON data to populate all sections: About Me, Experience, Skills, Education, and Contact.\n        *   Display skills in a visually appealing way (e.g., tags, grids).\n        *   The contact section should include all available contact information.\n    6.  **"Create Your Own" Button:** You MUST embed a small, unobtrusive, floating "Create Your Own AI Portfolio" button on the bottom-right of the page.\n        *   It should be fixed, so it stays in place while scrolling.\n        *   Style it with a subtle, modern look that complements the overall design.\n        *   The button must link to `https://${ROOT_DOMAIN}`.\n\n    **Output Requirements:**\n    *   You MUST return ONLY a single, complete HTML file.\n    *   The CSS MUST be embedded within a \`<style>\` tag in the HTML \`<head>\`.\n    *   Do NOT include any markdown, comments, or other text outside of the final HTML document.\n    *   The HTML should be well-structured and semantically correct.\n\n    **Candidate JSON Data:**\n    \`\`\`json\n    ${JSON.stringify(resumeData, null, 2)}\n    \`\`\`\n    `;
 
-  const experienceHtml = experience.map(exp => `
-    <div class="experience-item">
-      <h3>${exp.role} at ${exp.company}</h3>
-      <p class="duration">${exp.duration}</p>
-      <p>${exp.description}</p>
-    </div>
-  `).join('');
+  for (const providerConfig of apiProviders) {
+    if (!providerConfig.apiKey) {
+      console.warn(`Skipping ${providerConfig.name} provider for HTML generation: API key not set.`);
+      continue;
+    }
 
-  const skillsHtml = skills.map(skill => `<span class="skill-tag">${skill}</span>`).join('');
+    try {
+      console.log(`Attempting to generate portfolio HTML using ${providerConfig.name} provider...`);
+      const client = providerConfig.initClient(providerConfig.apiKey);
+      
+      if (providerConfig.name === "openai") {
+        const completion = await client.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
+                { role: "system", content: "You are a world-class web developer and designer." },
+                { role: "user", content: prompt }
+            ],
+            temperature: 0.5,
+        });
+        return completion.choices[0].message.content;
+      } else if (providerConfig.name === "gemini") {
+         const model = client.getGenerativeModel({ model: "gemini-1.5-flash" });
+         const result = await model.generateContent(prompt);
+         const response = await result.response;
+         return response.text();
+      }
 
-  const educationHtml = education.map(edu => `
-    <div class="education-item">
-      <h3>${edu.degree}</h3>
-      <p>${edu.institution} (${edu.year})</p>
-    </div>
-  `).join('');
-
-  const contactHtml = `
-    <p>Email: <a href="mailto:${contact.email}">${contact.email}</a></p>
-    ${contact.phone ? `<p>Phone: ${contact.phone}</p>` : ''}
-    ${contact.linkedin ? `<p>LinkedIn: <a href="${contact.linkedin}" target="_blank">${contact.linkedin}</a></p>` : ''}
-    ${contact.website ? `<p>Website: <a href="${contact.website}" target="_blank">${contact.website}</a></p>` : ''}
-  `;
-
-  // Basic styling based on inferred personality/industry/role
-  let dynamicStyles = '';
-  if (personality && personality.toLowerCase().includes('creative')) {
-    dynamicStyles += `
-      body { font-family: 'Georgia', serif; background-color: #f0f8ff; color: #333; }
-      .header { background-color: #ff6347; color: white; }
-      .skill-tag { background-color: #ff6347; }
-    `;
-  } else if (industry && industry.toLowerCase().includes('tech')) {
-    dynamicStyles += `
-      body { font-family: 'Roboto Mono', monospace; background-color: #282c34; color: #abb2bf; }
-      .header { background-color: #61afef; color: white; }
-      .skill-tag { background-color: #61afef; }
-    `;
-  } else { // Default professional style
-    dynamicStyles += `
-      body { font-family: 'Arial', sans-serif; background-color: #f4f4f4; color: #333; }
-      .header { background-color: #4CAF50; color: white; }
-      .skill-tag { background-color: #4CAF50; }
-    `;
+    } catch (error) {
+      console.error(`Error with ${providerConfig.name} during HTML generation: ${error.message}`);
+    }
   }
-
-  return `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>${name}'s Portfolio</title>
-      <style>
-        body { margin: 0; padding: 0; line-height: 1.6; }
-        .container { max-width: 900px; margin: 20px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .header { text-align: center; padding: 20px; border-radius: 8px 8px 0 0; }
-        .header h1 { margin: 0; color: inherit; }
-        .header p { margin: 5px 0 0; font-size: 1.1em; }
-        section { margin-bottom: 20px; padding: 15px; border: 1px solid #eee; border-radius: 8px; }
-        h2 { color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 0; }
-        .experience-item, .education-item { margin-bottom: 15px; }
-        .experience-item h3, .education-item h3 { margin: 0 0 5px; color: #555; }
-        .duration { font-style: italic; color: #777; }
-        .skills-grid { display: flex; flex-wrap: wrap; gap: 10px; }
-        .skill-tag { display: inline-block; padding: 8px 12px; border-radius: 5px; color: white; font-size: 0.9em; }
-        .contact-info p { margin: 5px 0; }
-        a { color: #007bff; text-decoration: none; }
-        a:hover { text-decoration: underline; }
-        ${dynamicStyles}
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <header class="header">
-          <h1>${name}</h1>
-          <p>${title}</p>
-        </header>
-
-        <section id="about">
-          <h2>About Me</h2>
-          <p>${summary}</p>
-        </section>
-
-        <section id="experience">
-          <h2>Experience</h2>
-          ${experienceHtml}
-        </section>
-
-        <section id="skills">
-          <h2>Skills</h2>
-          <div class="skills-grid">
-            ${skillsHtml}
-          </div>
-        </section>
-
-        <section id="education">
-          <h2>Education</h2>
-          ${educationHtml}
-        </section>
-
-        <section id="contact">
-          <h2>Contact</h2>
-          <div class="contact-info">
-            ${contactHtml}
-          </div>
-        </section>
-      </div>
-    </body>
-    </html>
-  `;
+  throw new Error("All configured AI providers failed to generate the portfolio HTML.");
 }
 
-// Middleware to parse JSON and URL-encoded bodies
-app.use(express.json({ limit: '10mb' })); // Increased limit for resume text
+// Middleware
+app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Serve static files from the current directory
-app.use(express.static(__dirname));
+// --- Dynamic Subdomain & Static Asset Handling ---
+app.use(async (req, res, next) => {
+  const hostname = req.hostname;
+  
+  // Check if it's a subdomain of our root domain
+  if (hostname.endsWith(`.${ROOT_DOMAIN}`) && hostname !== ROOT_DOMAIN) {
+    const subdomain = hostname.split('.')[0];
+    const sitePath = path.join(sitesDir, `${subdomain}.html`);
+    
+    try {
+      await fs.access(sitePath); // Check if file exists
+      res.sendFile(sitePath);
+    } catch (error) {
+      // If the file doesn't exist, it's not a generated site.
+      // You might want to redirect to the main page or show a 404.
+      res.status(404).send('Site not found.');
+    }
+  } else if (hostname === ROOT_DOMAIN || hostname === RENDER_SERVICE_URL) {
+    // It's a request to the main app, serve static files or the index.html
+    express.static(__dirname)(req, res, next);
+  } else {
+    next();
+  }
+});
 
-// New API endpoint for resume processing
+
+// --- API Endpoint for Portfolio Generation ---
 app.post('/api/generate-portfolio', async (req, res) => {
   try {
     const { resumeText } = req.body;
-
     if (!resumeText) {
       return res.status(400).json({ message: 'Resume text is required.' });
     }
 
-    // Use the imported AI logic
     const resumeData = await extractResumeData(resumeText);
     const portfolioHtml = await generatePortfolioHtml(resumeData);
 
-    res.json({ portfolioHtml });
+    // Generate a unique subdomain
+    const subdomain = `${resumeData.name.toLowerCase().replace(/[^a-z0-9]/g, '')}-${Date.now().toString().slice(-5)}`;
+    const siteUrl = `https://${subdomain}.${ROOT_DOMAIN}`;
+
+    // Save the HTML to a file
+    const filePath = path.join(sitesDir, `${subdomain}.html`);
+    await fs.writeFile(filePath, portfolioHtml);
+
+    // Create DNS record
+    await createDnsRecord(subdomain);
+
+    // Return the new URL to the client
+    res.json({ portfolioUrl: siteUrl, portfolioHtml: portfolioHtml });
+
   } catch (error) {
     console.error('Server-side portfolio generation error:', error);
     res.status(500).json({ message: 'Failed to generate portfolio.', error: error.message });
   }
 });
 
-// For all other GET requests, send back index.html
+// Fallback for the main site's index.html
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  if (req.hostname === ROOT_DOMAIN || req.hostname === RENDER_SERVICE_URL) {
+    res.sendFile(path.join(__dirname, 'index.html'));
+  } else {
+      res.status(404).send('Not Found');
+  }
 });
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
+
+export default app;
