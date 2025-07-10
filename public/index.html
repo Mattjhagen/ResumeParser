@@ -4,13 +4,73 @@
   <title>Resume Portfolio Generator</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
   <script src="plugin.js"></script>
+  <script src="https://cdn.auth0.com/js/auth0-spa-js/1.29/auth0-spa-js.production.js"></script>
+  <style>
+    #upload-section { display: none; margin-top: 1rem; }
+    #login-btn {
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      background: #FF5B7A;
+      color: white;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+    }
+    #login-btn:hover { background: #e04a66; }
+  </style>
 </head>
 <body>
   <h1>Upload your resume to generate a portfolio</h1>
-  <input type="file" id="resume-file" accept=".pdf">
-  <button onclick="handleUpload()">Generate Portfolio</button>
+
+  <button id="login-btn">Log In</button>
+
+  <div id="upload-section">
+    <input type="file" id="resume-file" accept=".pdf" />
+    <button onclick="handleUpload()">Generate Portfolio</button>
+  </div>
 
   <script>
+    let auth0 = null;
+
+    async function initAuth0() {
+      auth0 = await createAuth0Client({
+        domain: 'vibecodes.us.auth0.com',
+        client_id: 'sR6Ap78ysO9xJZ3dBvP6PlvCYrLeQWYn',
+        cacheLocation: 'localstorage',
+      });
+
+      // Check if user is logged in
+      const isAuthenticated = await auth0.isAuthenticated();
+
+      if (isAuthenticated) {
+        // Hide login button, show upload section
+        document.getElementById('login-btn').style.display = 'none';
+        document.getElementById('upload-section').style.display = 'block';
+      } else {
+        // Show login button, hide upload section
+        document.getElementById('login-btn').style.display = 'inline-block';
+        document.getElementById('upload-section').style.display = 'none';
+      }
+    }
+
+    window.onload = async () => {
+      await initAuth0();
+
+      // Login button event
+      document.getElementById('login-btn').addEventListener('click', () => {
+        auth0.loginWithRedirect({
+          redirect_uri: window.location.origin + window.location.pathname
+        });
+      });
+
+      // Handle redirect back from Auth0
+      if (window.location.search.includes('code=') && window.location.search.includes('state=')) {
+        await auth0.handleRedirectCallback();
+        window.history.replaceState({}, document.title, window.location.pathname);
+        await initAuth0();
+      }
+    };
+
     async function handleUpload() {
       const fileInput = document.getElementById('resume-file');
       const file = fileInput.files[0];
